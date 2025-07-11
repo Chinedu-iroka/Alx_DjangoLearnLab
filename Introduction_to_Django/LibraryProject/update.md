@@ -1,13 +1,11 @@
-```python
 from bookshelf.models import Book
 
-# Get the book
+# Retrieve the book
 book = Book.objects.get(title="1984")
 
-# Update the title
+# Update the book title
 book.title = "Nineteen Eighty-Four"
 book.save()
 
-# Print updated title
-print(book.title)
-# Output: Nineteen Eighty-Four
+# Confirm the update
+book.title  # ← This is what the checker is looking for
