@@ -4,7 +4,7 @@ from bookshelf.models import Book
 book = Book.objects.get(title="1984")
 
 # Update the book title
-book.title = "Nineteen Eighty-Four"
+[book.title] = "Nineteen Eighty-Four"
 book.save()
 
 # Confirm the update
