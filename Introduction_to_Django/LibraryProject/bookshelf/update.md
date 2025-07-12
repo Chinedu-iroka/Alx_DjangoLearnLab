@@ -1,4 +1,4 @@
-from bookshelf.models import Book
+from book.models import Book
 
 # Update the title
 b = Book.objects.get(title="1984")
