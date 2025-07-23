@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'bookshelf',
     'book',
     'relationship_app',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [
