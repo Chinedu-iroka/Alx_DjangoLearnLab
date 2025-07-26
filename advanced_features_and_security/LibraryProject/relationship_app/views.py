@@ -22,6 +22,9 @@ class LibraryDetailView(DetailView):
     context_object_name = 'library'
 
 # Register view
+def home(request):
+    return render(request, 'relationship_app/home.html')
+
 def register_view(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
