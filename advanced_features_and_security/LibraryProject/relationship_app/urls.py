@@ -6,7 +6,6 @@ from .views import add_book, edit_book, delete_book
 
 
 urlpatterns = [ 
-    path('', views.home, name='home'),
     path('books/', views.list_books, name='list_books'),
     path('libraries/<int:pk>/', views.LibraryDetailView.as_view(), name='library_detail'),
 
@@ -26,3 +25,6 @@ urlpatterns = [
     path('delete_book/<int:book_id>/', views.delete_book, name='delete_book'),
 
 ]
+
+
+# relationship_app/urls.py

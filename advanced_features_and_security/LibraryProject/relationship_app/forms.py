@@ -1,13 +1,16 @@
+# relationship_app/forms.py
 from django import forms
-from .models import Book
 from django.contrib.auth.forms import UserCreationForm
-from .models import CustomUser
+from django.contrib.auth.models import User
+from .models import Book
 
 class RegisterForm(UserCreationForm):
+    email = forms.EmailField()
+
     class Meta:
-        model = CustomUser
-        fields = ['username', 'email', 'date_of_birth', 'profile_photo', 'password1', 'password2']
-    
+        model = User
+        fields = ['username', 'email', 'password1', 'password2']
+
 class BookForm(forms.ModelForm):
     class Meta:
         model = Book
