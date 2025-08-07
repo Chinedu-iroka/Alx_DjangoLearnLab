@@ -7,7 +7,10 @@ from .models import Author
 from .serializers import AuthorSerializer
 from rest_framework import generics, permissions
 from .models import Book
+from rest_framework import status
 from .serializers import BookSerializer
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
 
 # APIView to return all authors and their books
 class AuthorListView(APIView):
@@ -65,3 +68,32 @@ class BookDeleteView(generics.DestroyAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+
+class BookUpdateCustomView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        book_id = request.data.get("id")
+        if not book_id:
+            return Response({"error": "Book ID is required."}, status=400)
+        
+        book = get_object_or_404(Book, id=book_id)
+        serializer = BookSerializer(book, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+    
+class BookDeleteCustomView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        book_id = request.data.get("id")
+        if not book_id:
+            return Response({"error": "Book ID is required."}, status=400)
+
+        book = get_object_or_404(Book, id=book_id)
+        book.delete()
+        return Response({"message": "Book deleted successfully."}, status=204)
