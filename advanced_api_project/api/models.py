@@ -20,4 +20,4 @@ class Book(models.Model):
     author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name='books') # If the author is deleted, all their books are deleted and also 
 
     def __str__(self):
-        return self.title  # Human-readable representation
+        return self.title  # Human-readable representation here
