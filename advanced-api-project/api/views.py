@@ -105,3 +105,15 @@ class BookDeleteCustomView(APIView):
         book = get_object_or_404(Book, id=book_id)
         book.delete()
         return Response({"message": "Book deleted successfully."}, status=204)
+    
+
+class BookListCreateView(generics.ListCreateAPIView):
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+# ✅ Retrieve, Update, Delete Book by ID
+class BookRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
