@@ -2,13 +2,13 @@ from typing import Self
 from django.shortcuts import render
 
 # Create your views here.
-from rest_framework.viewsets import ModelViewSet
-from rest_framework import generics, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.shortcuts import render
 from .models import Book
 from .serializers import BookSerializer
+from rest_framework import viewsets
 
 
 # class BookList(generics.ListAPIView):
@@ -65,7 +65,7 @@ from .serializers import BookSerializer
 #             headers=headers
 #         )
 
-class BookViewSet(ModelViewSet):
+class BookViewSet(viewsets.ModelViewSet):
     """
     A ViewSet for handling all CRUD operations on Book model.
     
