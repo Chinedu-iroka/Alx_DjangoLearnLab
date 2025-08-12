@@ -13,6 +13,11 @@ urlpatterns = [
     path('logout/', views.CustomLogoutView.as_view(), name='logout'),
     path('register/', views.register, name='register'),
     path('profile/', views.profile, name='profile'),
+
+    # Comment URLs
+    path('post/<int:post_pk>/comments/new/', views.CommentCreateView.as_view(), name='comment-create'),
+    path('comment/<int:pk>/edit/', views.CommentUpdateView.as_view(), name='comment-update'),
+    path('comment/<int:pk>/delete/', views.CommentDeleteView.as_view(), name='comment-delete'),
 ]
 
 

@@ -4,16 +4,45 @@
 <article>
     <h1>{{ post.title }}</h1>
     <p><small>By {{ post.author.username }} on {{ post.published_date|date:"F j, Y, g:i a" }}</small></p>
-    <div>
-        {{ post.content|linebreaks }}
-    </div>
+    <div>{{ post.content|linebreaks }}</div>
 
     {% if request.user == post.author %}
         <p>
-            <a href="{% url 'post-update' post.pk %}">Edit</a> |
-            <a href="{% url 'post-delete' post.pk %}">Delete</a>
+            <a href="{% url 'post-update' post.pk %}">Edit Post</a> |
+            <a href="{% url 'post-delete' post.pk %}">Delete Post</a>
         </p>
     {% endif %}
-    <p><a href="{% url 'posts' %}">Back to posts</a></p>
+
+    <hr>
+    <h3>Comments</h3>
+    {% if post.comments.all %}
+        <ul>
+        {% for comment in post.comments.all %}
+            <li>
+                <p><strong>{{ comment.author.username }}</strong> on {{ comment.created_at|date:"F j, Y, g:i a" }}</p>
+                <p>{{ comment.content|linebreaks }}</p>
+                {% if request.user == comment.author %}
+                    <p>
+                        <a href="{% url 'comment-update' comment.pk %}">Edit</a> |
+                        <a href="{% url 'comment-delete' comment.pk %}">Delete</a>
+                    </p>
+                {% endif %}
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No comments yet.</p>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+        <h4>Add a Comment</h4>
+        <form method="post" action="{% url 'comment-create' post.pk %}">
+            {% csrf_token %}
+            {{ comment_form.as_p }}
+            <button type="submit">Submit Comment</button>
+        </form>
+    {% else %}
+        <p><a href="{% url 'login' %}">Login</a> to add a comment.</p>
+    {% endif %}
 </article>
 {% endblock %}
