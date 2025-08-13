@@ -1,5 +1,6 @@
 from django.urls import path
 from blog import views
+from .views import PostListView
 
 urlpatterns = [
     path('', views.PostListView.as_view(), name='home'),   
@@ -18,6 +19,10 @@ urlpatterns = [
     path('post/<int:pk>/comments/new/', views.CommentCreateView.as_view(), name='comment-create'),
     path('comment/<int:pk>/update/', views.CommentUpdateView.as_view(), name='comment-update'),
     path('comment/<int:pk>/delete/', views.CommentDeleteView.as_view(), name='comment-delete'),
+
+    # Search and tags
+    path('search/', views.post_search, name='post-search'),
+    path('tags/<slug:tag_slug>/', views.PostListView.as_view(), name='posts-by-tag'),
 ]
 
 

@@ -3,6 +3,7 @@ from django.db import models
 # Create your models here.
 from django.contrib.auth.models import User  # Import User model
 from django.urls import reverse
+from taggit.managers import TaggableManager
 
 class Post(models.Model):
     title = models.CharField(max_length=200)
@@ -13,7 +14,7 @@ class Post(models.Model):
         on_delete=models.CASCADE, 
         related_name='posts'
     )
-
+    tags = TaggableManager()
     def __str__(self):
         return self.title
     
@@ -28,4 +29,4 @@ class Comment(models.Model):
         return f'Comment by {self.author.username} on {self.post.title}'
     
     def get_absolute_url(self):
-        return reverse('post-detail', kwargs={'pk': self.pk})
+        return reverse('post-detail', kwargs={'pk': self.post.pk})

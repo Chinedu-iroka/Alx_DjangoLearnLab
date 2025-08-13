@@ -1,5 +1,6 @@
 from django import forms
 from .models import Post
+from taggit.forms import TagWidget
 from .models import Comment
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
@@ -15,8 +16,9 @@ class RegisterForm(UserCreationForm):
 class PostForm(forms.ModelForm):
     class Meta:
         model = Post
-        fields = ['title', 'content']
-        widgets = {
+        fields = ['title', 'content', 'tags']
+        widgets = { 
+            'tags': TagWidget(),
             'title': forms.TextInput(attrs={'placeholder': 'Post title'}),
             'content': forms.Textarea(attrs={'rows': 10, 'placeholder': 'Write your post...'}),
         }

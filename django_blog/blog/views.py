@@ -5,11 +5,13 @@ from django.contrib.auth import login
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
+from django.db.models import Q
 from .forms import RegisterForm
 from .models import Post
 from .forms import PostForm
 from .models import Comment, Post
 from .forms import CommentForm
+from taggit.models import Tag
 # Create your views here.
 
 def home(request):
@@ -50,10 +52,17 @@ def posts(request):
 
 class PostListView(ListView):
     model = Post
-    template_name = 'blog/posts.html'      # reuse your posts template
+    template_name = 'blog/post_list.html'      # reuse your posts template
     context_object_name = 'posts'
     ordering = ['-published_date']
     paginate_by = 10  # optional
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        tag_slug = self.kwargs.get('tag_slug')
+        if tag_slug:
+            queryset = queryset.filter(tags__slug=tag_slug)
+        return queryset
 
 class PostDetailView(DetailView):
     model = Post
@@ -126,3 +135,21 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def test_func(self):
         comment = self.get_object()
         return comment.author == self.request.user
+    
+def post_search(request):
+    query = request.GET.get('q')
+    results = Post.objects.none()  # default empty
+
+    if query:
+        results = Post.objects.filter(
+            Q(title__icontains=query) |
+            Q(content__icontains=query) |
+            Q(tags__name__icontains=query)
+        ).distinct()
+
+    context = {
+        'query': query,
+        'results': results,
+    }
+
+    return render(request, 'blog/search_results.html', context)
