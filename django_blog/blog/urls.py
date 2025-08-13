@@ -1,6 +1,6 @@
 from django.urls import path
 from blog import views
-from .views import PostListView
+from .views import PostByTagListView, PostListView
 
 urlpatterns = [
     path('', views.PostListView.as_view(), name='home'),   
@@ -23,6 +23,7 @@ urlpatterns = [
     # Search and tags
     path('search/', views.post_search, name='post-search'),
     path('tags/<slug:tag_slug>/', views.PostListView.as_view(), name='posts-by-tag'),
+    path('tag/<str:tag>/', PostByTagListView.as_view(), name='post-by-tag'),
 ]
 
 
