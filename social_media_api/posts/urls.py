@@ -10,4 +10,6 @@ urlpatterns = [
     path('', include(router.urls)),
 
     path('feed/', views.user_feed, name='user-feed'),
+
+    path('posts/<int:post_id>/like-status/', views.PostLikeDetailView.as_view(), name='post-like-status'),
 ]

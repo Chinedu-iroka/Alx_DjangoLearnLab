@@ -1,8 +1,9 @@
+from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import render
 
 # Create your views here.
 
-from rest_framework import viewsets, permissions, status, filters
+from rest_framework import viewsets, permissions, status, filters, generics
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -12,7 +13,7 @@ from .models import Post, Comment, Like
 from django.shortcuts import get_object_or_404
 from notifications.models import Notification
 from .serializers import (
-    PostSerializer, PostCreateSerializer, 
+    LikeSerializer, PostSerializer, PostCreateSerializer, 
     CommentSerializer, CommentCreateSerializer
 )
 from .pagination import CustomPagination
@@ -48,8 +49,18 @@ class PostViewSet(viewsets.ModelViewSet):
         post = self.get_object()
         serializer = CommentCreateSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(post=post, author=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            comment = serializer.save(post=post, author=request.user)
+
+        if post.author != request.user:
+                Notification.objects.create(
+                    recipient=post.author,
+                    actor=request.user,
+                    verb=Notification.COMMENT,
+                    content_type_id=ContentType.objects.get_for_model(comment).id,
+                    object_id=comment.id
+                )
+                
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get'])
@@ -65,33 +76,59 @@ class PostViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def like(self, request, pk=None):
-        post = self.get_object()
+        post = generics.get_object_or_404(Post, pk=pk)
+
+        like, created = Like.objects.get_or_create(
+            user=request.user,
+            post=post,
+            defaults={'user': request.user, 'post': post}
+        )
         
-        # Check if user already liked this post
-        if Like.objects.filter(user=request.user, post=post).exists():
+        if not created:
             return Response(
                 {'error': 'You have already liked this post.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Create like
-        like = Like.objects.create(user=request.user, post=post)
-        
-        # Create notification if the post author is not the one liking
+        # Create notification using Notification.objects.create
         if post.author != request.user:
-            Notification.create_notification(
+            Notification.objects.create(
                 recipient=post.author,
                 actor=request.user,
                 verb=Notification.LIKE,
-                target=post
+                content_type_id=ContentType.objects.get_for_model(post).id,
+                object_id=post.id
             )
         
         serializer = LikeSerializer(like)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        
+        # Check if user already liked this post
+        # if Like.objects.filter(user=request.user, post=post).exists():
+        #     return Response(
+        #         {'error': 'You have already liked this post.'},
+        #         status=status.HTTP_400_BAD_REQUEST
+        #     )
+        
+        # # Create like
+        # like = Like.objects.create(user=request.user, post=post)
+        
+        # # Create notification if the post author is not the one liking
+        # if post.author != request.user:
+        #     Notification.create_notification(
+        #         recipient=post.author,
+        #         actor=request.user,
+        #         verb=Notification.LIKE,
+        #         target=post
+        #     )
+        
+        # serializer = LikeSerializer(like)
+        # return Response(serializer.data, status=status.HTTP_201_CREATED)
     
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def unlike(self, request, pk=None):
-        post = self.get_object()
+        post = generics.get_object_or_404(Post, pk=pk)
         
         try:
             like = Like.objects.get(user=request.user, post=post)
@@ -143,7 +180,8 @@ class CommentViewSet(viewsets.ModelViewSet):
                 recipient=comment.post.author,
                 actor=self.request.user,
                 verb=Notification.COMMENT,
-                target=comment
+                content_type_id=ContentType.objects.get_for_model(comment).id,
+                object_id=comment.id
             )
 
 @api_view(['GET'])
@@ -163,3 +201,12 @@ def user_feed(request):
     serializer = PostSerializer(paginated_posts, many=True, context={'request': request})
     
     return paginator.get_paginated_response(serializer.data)
+
+
+class PostLikeDetailView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, post_id):
+        post = generics.get_object_or_404(Post, pk=post_id)
+        like_exists = Like.objects.filter(user=request.user, post=post).exists()
+        return Response({'liked': like_exists})
