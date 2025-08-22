@@ -24,3 +24,15 @@
         }
     ]
 }
+
+
+## Follow Management Endpoints
+
+### Follow a User
+**POST** `/api/auth/follow/`
+- **Headers:** `Authorization: Token <your_token>`
+- **Body:**
+```json
+{
+    "user_id": 2
+}

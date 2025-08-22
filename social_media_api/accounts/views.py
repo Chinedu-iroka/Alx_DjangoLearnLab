@@ -8,7 +8,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import login
-from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer
+from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
+from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer, FollowSerializer, UserProfileWithFollowStatusSerializer
+
+User = get_user_model()
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -61,3 +65,78 @@ def logout_user(request):
     except:
         pass
     return Response({'message': 'Successfully logged out.'}, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def follow_user(request):
+    serializer = FollowSerializer(data=request.data)
+    if serializer.is_valid():
+        user_to_follow = get_object_or_404(User, id=serializer.validated_data['user_id'])
+        
+        if user_to_follow == request.user:
+            return Response(
+                {'error': 'You cannot follow yourself.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if request.user.follow(user_to_follow):
+            return Response(
+                {'message': f'You are now following {user_to_follow.username}.'},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                {'error': 'You are already following this user.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def unfollow_user(request):
+    serializer = FollowSerializer(data=request.data)
+    if serializer.is_valid():
+        user_to_unfollow = get_object_or_404(User, id=serializer.validated_data['user_id'])
+        
+        if request.user.unfollow(user_to_unfollow):
+            return Response(
+                {'message': f'You have unfollowed {user_to_unfollow.username}.'},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                {'error': 'You are not following this user.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_following(request):
+    following_users = request.user.following.all()
+    serializer = UserProfileWithFollowStatusSerializer(
+        following_users, 
+        many=True,
+        context={'request': request}
+    )
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_followers(request):
+    followers = request.user.followers.all()
+    serializer = UserProfileWithFollowStatusSerializer(
+        followers, 
+        many=True,
+        context={'request': request}
+    )
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_profile_with_follow_status(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    serializer = UserProfileWithFollowStatusSerializer(user, context={'request': request})
+    return Response(serializer.data)
