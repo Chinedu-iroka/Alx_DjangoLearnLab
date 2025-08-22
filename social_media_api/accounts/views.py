@@ -2,7 +2,7 @@ from django.shortcuts import render
 
 # Create your views here.
 
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -10,6 +10,7 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import login
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from .models import CustomUser
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer, FollowSerializer, UserProfileWithFollowStatusSerializer
 
 User = get_user_model()
@@ -140,3 +141,42 @@ def user_profile_with_follow_status(request, user_id):
     user = get_object_or_404(User, id=user_id)
     serializer = UserProfileWithFollowStatusSerializer(user, context={'request': request})
     return Response(serializer.data)
+
+
+class UserListView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = CustomUser.objects.all()
+    
+    def get(self, request):
+        users = self.get_queryset()
+        serializer = UserProfileWithFollowStatusSerializer(
+            users, 
+            many=True, 
+            context={'request': request}
+        )
+        return Response(serializer.data)
+
+# Add another view that uses permissions.IsAuthenticated with CustomUser.objects.all()
+class UserSearchView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = CustomUser.objects.all()
+    
+    def get(self, request):
+        search_query = request.query_params.get('search', '')
+        if search_query:
+            users = CustomUser.objects.filter(
+                username__icontains=search_query
+            ) | CustomUser.objects.filter(
+                first_name__icontains=search_query
+            ) | CustomUser.objects.filter(
+                last_name__icontains=search_query
+            )
+        else:
+            users = CustomUser.objects.all()
+        
+        serializer = UserProfileWithFollowStatusSerializer(
+            users, 
+            many=True, 
+            context={'request': request}
+        )
+        return Response(serializer.data)
