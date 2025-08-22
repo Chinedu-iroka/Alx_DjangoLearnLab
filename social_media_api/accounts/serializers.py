@@ -2,14 +2,13 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from rest_framework.authtoken.models import Token
-from .models import CustomUser
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
 
     class Meta:
-        model = CustomUser
+        model = get_user_model()
         fields = ('username', 'email', 'password', 'password_confirm', 'first_name', 'last_name')
 
     def validate(self, data):
@@ -19,7 +18,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('password_confirm')
-        user = CustomUser.objects.create_user(
+        user = get_user_model().objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password'],
@@ -56,7 +55,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     following_count = serializers.ReadOnlyField()
 
     class Meta:
-        model = CustomUser
+        model = get_user_model()
         fields = ('id', 'username', 'email', 'first_name', 'last_name', 'bio', 
                  'profile_picture', 'followers_count', 'following_count', 
                  'created_at', 'updated_at')

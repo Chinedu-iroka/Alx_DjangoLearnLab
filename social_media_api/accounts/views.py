@@ -9,7 +9,6 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import login
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer
-from .models import CustomUser
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -17,7 +16,8 @@ def register_user(request):
     serializer = UserRegistrationSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
-        token, created = Token.objects.get_or_create(user=user)
+        # Get the token that was created in the serializer
+        token = Token.objects.get(user=user)
         return Response({
             'token': token.key,
             'user': UserProfileSerializer(user).data
@@ -31,6 +31,7 @@ def login_user(request):
     if serializer.is_valid():
         user = serializer.validated_data['user']
         login(request, user)
+        # Get or create token for the user
         token, created = Token.objects.get_or_create(user=user)
         return Response({
             'token': token.key,
