@@ -36,3 +36,19 @@
 {
     "user_id": 2
 }
+
+
+
+## Like Endpoints
+
+### Like a Post
+**POST** `/api/posts/{post_id}/like/`
+- **Headers:** `Authorization: Token <your_token>`
+- **Response:**
+```json
+{
+    "id": 1,
+    "user": "username",
+    "post": 1,
+    "created_at": "2023-01-01T10:00:00Z"
+}

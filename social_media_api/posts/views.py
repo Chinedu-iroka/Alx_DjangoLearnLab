@@ -8,7 +8,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
-from .models import Post, Comment
+from .models import Post, Comment, Like
+from django.shortcuts import get_object_or_404
+from notifications.models import Notification
 from .serializers import (
     PostSerializer, PostCreateSerializer, 
     CommentSerializer, CommentCreateSerializer
@@ -60,6 +62,60 @@ class PostViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = CommentSerializer(comments, many=True)
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def like(self, request, pk=None):
+        post = self.get_object()
+        
+        # Check if user already liked this post
+        if Like.objects.filter(user=request.user, post=post).exists():
+            return Response(
+                {'error': 'You have already liked this post.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Create like
+        like = Like.objects.create(user=request.user, post=post)
+        
+        # Create notification if the post author is not the one liking
+        if post.author != request.user:
+            Notification.create_notification(
+                recipient=post.author,
+                actor=request.user,
+                verb=Notification.LIKE,
+                target=post
+            )
+        
+        serializer = LikeSerializer(like)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def unlike(self, request, pk=None):
+        post = self.get_object()
+        
+        try:
+            like = Like.objects.get(user=request.user, post=post)
+            like.delete()
+            return Response(
+                {'message': 'Post unliked successfully.'},
+                status=status.HTTP_200_OK
+            )
+        except Like.DoesNotExist:
+            return Response(
+                {'error': 'You have not liked this post.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=True, methods=['get'])
+    def likes(self, request, pk=None):
+        post = self.get_object()
+        likes = post.likes.all()
+        page = self.paginate_queryset(likes)
+        if page is not None:
+            serializer = LikeSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = LikeSerializer(likes, many=True)
+        return Response(serializer.data)
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
@@ -79,7 +135,16 @@ class CommentViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        comment = serializer.save(author=self.request.user)
+        
+        # Create notification if the post author is not the comment author
+        if comment.post.author != self.request.user:
+            Notification.create_notification(
+                recipient=comment.post.author,
+                actor=self.request.user,
+                verb=Notification.COMMENT,
+                target=comment
+            )
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

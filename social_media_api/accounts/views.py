@@ -12,6 +12,7 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from .models import CustomUser
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer, FollowSerializer, UserProfileWithFollowStatusSerializer
+from notifications.models import Notification
 
 User = get_user_model()
 
@@ -79,6 +80,13 @@ def follow_user(request, user_id):
         )
     
     if request.user.follow(user_to_follow):
+
+        Notification.create_notification(
+            recipient=user_to_follow,
+            actor=request.user,
+            verb=Notification.FOLLOW
+        )
+        
         return Response(
             {'message': f'You are now following {user_to_follow.username}.'},
             status=status.HTTP_200_OK
